@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: java-shop-postgres
+    environment:
+      POSTGRES_DB: java_shop
+      POSTGRES_USER: java_shop_user
+      POSTGRES_PASSWORD: java_shop_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - java_shop_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U java_shop_user -d java_shop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  java-shop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: java-shop-app
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  java_shop_postgres_data:

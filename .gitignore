@@ -21,7 +21,13 @@ target/
 Thumbs.db
 
 # Terraform
-.terraform/
+**/.terraform/
 *.tfstate
 *.tfstate.*
-terraform.tfvars
+*.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
