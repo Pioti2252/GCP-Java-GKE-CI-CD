@@ -4,7 +4,6 @@ output "artifact_registry_repository_id" {
 
 output "artifact_registry_repository_name" {
   value = module.artifact_registry.repository_name
-<<<<<<< HEAD
 }
 
 output "gke_cluster_name" {
@@ -34,6 +33,4 @@ output "cloud_sql_public_ip_address" {
 
 output "cloud_sql_database_name" {
   value = module.cloud_sql.database_name
-=======
->>>>>>> 4d6c52a03260a3e928b734a6ed2bea6d53d6a093
 }

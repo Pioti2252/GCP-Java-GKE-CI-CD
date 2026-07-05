@@ -5,3 +5,32 @@ output "artifact_registry_repository_id" {
 output "artifact_registry_repository_name" {
   value = module.artifact_registry.repository_name
 }
+
+output "gke_cluster_name" {
+  value = module.gke.cluster_name
+}
+
+output "gke_cluster_location" {
+  value = module.gke.cluster_location
+}
+
+output "gke_cluster_endpoint" {
+  value     = module.gke.cluster_endpoint
+  sensitive = true
+}
+
+output "cloud_sql_instance_name" {
+  value = module.cloud_sql.instance_name
+}
+
+output "cloud_sql_connection_name" {
+  value = module.cloud_sql.connection_name
+}
+
+output "cloud_sql_public_ip_address" {
+  value = module.cloud_sql.public_ip_address
+}
+
+output "cloud_sql_database_name" {
+  value = module.cloud_sql.database_name
+}

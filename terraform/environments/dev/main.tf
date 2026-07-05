@@ -4,7 +4,6 @@ module "artifact_registry" {
   region        = var.region
   repository_id = "java-shop-dev"
   environment   = var.environment
-<<<<<<< HEAD
 }
 
 module "gke" {
@@ -31,6 +30,4 @@ module "cloud_sql" {
   database_name     = "java_shop"
   database_user     = "java_shop_user"
   database_password = var.database_password
-=======
->>>>>>> 4d6c52a03260a3e928b734a6ed2bea6d53d6a093
 }
