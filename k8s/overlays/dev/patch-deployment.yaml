@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-shop-app
+  namespace: java-shop
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: java-shop-app
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"

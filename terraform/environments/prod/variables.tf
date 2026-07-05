@@ -12,3 +12,8 @@ variable "environment" {
   description = "Environment name"
   type        = string
 }
+
+variable "database_password" {
+  description = "Database password"
+  type        = string
+}
