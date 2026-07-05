@@ -6,7 +6,7 @@ metadata:
   labels:
     app: java-shop-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: java-shop-app
