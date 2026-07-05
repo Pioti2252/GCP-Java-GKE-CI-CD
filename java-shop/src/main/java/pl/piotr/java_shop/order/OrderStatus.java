@@ -1,4 +1,7 @@
 package pl.piotr.java_shop.order;
 
-public class OrderStatus {
+public enum OrderStatus {
+    CREATED,
+    PAID,
+    CANCELLED
 }

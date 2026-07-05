@@ -1,4 +1,8 @@
 package pl.piotr.java_shop.order;
 
-public class OrderNotFoundException {
+public class OrderNotFoundException extends RuntimeException {
+
+    public OrderNotFoundException(Long id) {
+        super("Order not found with id: " + id);
+    }
 }

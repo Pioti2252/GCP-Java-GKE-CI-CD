@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-shop-app
+  namespace: java-shop
+  labels:
+    app: java-shop-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: java-shop-app
+  template:
+    metadata:
+      labels:
+        app: java-shop-app
+    spec:
+      containers:
+        - name: java-shop-app
+          image: europe-central2-docker.pkg.dev/gcp-java-gke-ci-cd/java-shop-dev/java-shop:dev-v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: java-shop-config
+            - secretRef:
+                name: java-shop-db-secret
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 5
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 5
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"

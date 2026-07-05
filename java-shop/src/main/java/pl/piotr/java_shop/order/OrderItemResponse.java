@@ -1,4 +1,23 @@
 package pl.piotr.java_shop.order;
 
-public class OrderItemResponse {
+import java.math.BigDecimal;
+
+public record OrderItemResponse(
+        Long id,
+        Long productId,
+        String productName,
+        Integer quantity,
+        BigDecimal unitPrice,
+        BigDecimal lineTotal
+) {
+    public static OrderItemResponse from(OrderItem item) {
+        return new OrderItemResponse(
+                item.getId(),
+                item.getProduct().getId(),
+                item.getProduct().getName(),
+                item.getQuantity(),
+                item.getUnitPrice(),
+                item.getLineTotal()
+        );
+    }
 }
