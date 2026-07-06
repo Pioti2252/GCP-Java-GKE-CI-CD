@@ -42,3 +42,15 @@ output "gke_node_service_account_email" {
 output "jenkins_service_account_email" {
   value = module.iam.jenkins_service_account_email
 }
+
+output "jenkins_vm_external_ip" {
+  value = module.jenkins_vm.jenkins_vm_external_ip
+}
+
+output "jenkins_url" {
+  value = module.jenkins_vm.jenkins_url
+}
+
+output "jenkins_vm_service_account_email" {
+  value = module.jenkins_vm.jenkins_vm_service_account_email
+}

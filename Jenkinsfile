@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+
+    environment {
+        PROJECT_ID = 'gcp-java-gke-ci-cd'
+        REGION = 'europe-central2'
+
+        DEV_CLUSTER = 'java-shop-dev-gke'
+        DEV_REPOSITORY = 'java-shop-dev'
+
+        IMAGE_NAME = 'java-shop'
+        IMAGE_TAG = "dev-${env.BUILD_NUMBER}"
+        IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${DEV_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                dir('java-shop') {
+                    sh 'chmod +x mvnw'
+                    sh './mvnw clean test'
+                }
+            }
+        }
+
+        stage('Build Docker image') {
+            steps {
+                dir('java-shop') {
+                    sh 'docker build -t $IMAGE_URI .'
+                }
+            }
+        }
+
+        stage('Configure Docker auth') {
+            steps {
+                sh 'gcloud auth configure-docker $REGION-docker.pkg.dev --quiet'
+            }
+        }
+
+        stage('Push Docker image') {
+            steps {
+                sh 'docker push $IMAGE_URI'
+            }
+        }
+
+        stage('Deploy to DEV') {
+            steps {
+                sh '''
+                    gcloud container clusters get-credentials $DEV_CLUSTER \
+                      --region $REGION \
+                      --project $PROJECT_ID
+
+                    kubectl set image deployment/java-shop-app \
+                      java-shop-app=$IMAGE_URI \
+                      -n java-shop
+
+                    kubectl rollout status deployment/java-shop-app -n java-shop
+                '''
+            }
+        }
+
+        stage('Show DEV resources') {
+            steps {
+                sh 'kubectl get pods -n java-shop'
+                sh 'kubectl get svc -n java-shop'
+                sh 'kubectl get ingress -n java-shop'
+                sh 'kubectl get hpa -n java-shop'
+            }
+        }
+    }
+}

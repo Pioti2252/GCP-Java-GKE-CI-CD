@@ -23,3 +23,8 @@ variable "project_number" {
   description = "GCP project number"
   type        = string
 }
+
+variable "zone" {
+  description = "GCP zone"
+  type        = string
+}

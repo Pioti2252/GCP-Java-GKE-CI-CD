@@ -42,3 +42,17 @@ module "iam" {
   jenkins_service_account_id           = "jenkins-dev-deployer"
   jenkins_service_account_display_name = "Jenkins DEV Deployer"
 }
+
+module "jenkins_vm" {
+  source = "../../modules/jenkins-vm"
+
+  project_id  = var.project_id
+  zone        = var.zone
+  environment = var.environment
+
+  machine_type = "e2-medium"
+  disk_size_gb = 30
+
+  allowed_ssh_cidr     = "0.0.0.0/0"
+  allowed_jenkins_cidr = "0.0.0.0/0"
+}
