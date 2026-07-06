@@ -31,3 +31,14 @@ module "cloud_sql" {
   database_user     = "java_shop_user"
   database_password = var.database_password
 }
+
+module "iam" {
+  source = "../../modules/iam"
+
+  project_id         = var.project_id
+  project_number     = var.project_number
+  environment        = var.environment
+
+  jenkins_service_account_id           = "jenkins-dev-deployer"
+  jenkins_service_account_display_name = "Jenkins DEV Deployer"
+}

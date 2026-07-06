@@ -17,3 +17,8 @@ variable "database_password" {
   description = "Database password"
   type        = string
 }
+
+variable "project_number" {
+  description = "GCP project number"
+  type        = string
+}

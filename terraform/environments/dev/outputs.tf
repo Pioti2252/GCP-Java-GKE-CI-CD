@@ -34,3 +34,11 @@ output "cloud_sql_public_ip_address" {
 output "cloud_sql_database_name" {
   value = module.cloud_sql.database_name
 }
+
+output "gke_node_service_account_email" {
+  value = module.iam.gke_node_service_account_email
+}
+
+output "jenkins_service_account_email" {
+  value = module.iam.jenkins_service_account_email
+}

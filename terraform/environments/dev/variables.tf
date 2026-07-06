@@ -18,3 +18,8 @@ variable "database_password" {
   type        = string
   sensitive   = true
 }
+
+variable "project_number" {
+  description = "GCP project number"
+  type        = string
+}
