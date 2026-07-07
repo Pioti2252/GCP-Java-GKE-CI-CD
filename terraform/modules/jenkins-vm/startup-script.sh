@@ -1,29 +1,21 @@
 #!/bin/bash
 set -e
 
+echo "=== Updating packages ==="
 apt-get update -y
+apt-get install -y apt-transport-https ca-certificates curl gnupg wget git software-properties-common
 
-apt-get install -y \
-  ca-certificates \
-  curl \
-  gnupg \
-  lsb-release \
-  apt-transport-https \
-  git \
-  unzip \
-  jq
+echo "=== Installing Java 21 ==="
+apt-get install -y openjdk-21-jdk
 
-# Java 21 for Jenkins
-apt-get install -y fontconfig openjdk-21-jre
-
-# Jenkins repository
+echo "=== Installing Jenkins ==="
 mkdir -p /etc/apt/keyrings
 
 wget -O /etc/apt/keyrings/jenkins-keyring.asc \
   https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
 
-echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | \
+  tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
 apt-get update -y
 apt-get install -y jenkins
@@ -31,32 +23,55 @@ apt-get install -y jenkins
 systemctl enable jenkins
 systemctl start jenkins
 
-# Docker
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
+echo "=== Installing Docker ==="
+apt-get install -y docker.io
 
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable docker
+systemctl start docker
 
 usermod -aG docker jenkins
 
-systemctl enable docker
+echo "=== Installing Google Cloud CLI repository ==="
+mkdir -p /usr/share/keyrings
+
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+  gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
+  tee /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null
+
+apt-get update -y
+
+echo "=== Installing GKE auth plugin ==="
+apt-get install -y google-cloud-cli-gke-gcloud-auth-plugin || \
+apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+
+echo "=== Installing kubectl ==="
+mkdir -p /etc/apt/keyrings
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | \
+  gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | \
+  tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+
+apt-get update -y
+apt-get install -y kubectl
+
+echo "=== Configuring Docker auth for Jenkins user ==="
+sudo -u jenkins gcloud auth configure-docker europe-central2-docker.pkg.dev --quiet || true
+
+echo "=== Restarting services ==="
 systemctl restart docker
 systemctl restart jenkins
 
-# Google Cloud CLI
-curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+echo "=== Installed versions ==="
+java -version || true
+javac -version || true
+docker --version || true
+gcloud --version || true
+kubectl version --client || true
+gke-gcloud-auth-plugin --version || true
 
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee \
-  /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null
-
-apt-get update -y
-apt-get install -y google-cloud-cli google-cloud-cli-gke-gcloud-auth-plugin kubectl
-
-# Artifact Registry docker auth for Jenkins user
-sudo -u jenkins gcloud auth configure-docker europe-central2-docker.pkg.dev --quiet || true
+echo "=== Jenkins initial password path ==="
+echo "/var/lib/jenkins/secrets/initialAdminPassword"
