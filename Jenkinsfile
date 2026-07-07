@@ -52,20 +52,48 @@ pipeline {
         stage('Deploy to DEV') {
             steps {
                 sh '''
-                    gcloud container clusters get-credentials $DEV_CLUSTER \
-                      --region $REGION \
-                      --project $PROJECT_ID
-
-                    kubectl set image deployment/java-shop-app \
-                      java-shop-app=$IMAGE_URI \
-                      -n java-shop
-
+                    gcloud container clusters get-credentials $DEV_CLUSTER --region $REGION --project $PROJECT_ID
+                    kubectl set image deployment/java-shop-app java-shop-app=$IMAGE_URI -n java-shop
                     kubectl rollout status deployment/java-shop-app -n java-shop
                 '''
             }
         }
 
         stage('Show DEV resources') {
+            steps {
+                sh 'kubectl get pods -n java-shop'
+                sh 'kubectl get svc -n java-shop'
+                sh 'kubectl get ingress -n java-shop'
+                sh 'kubectl get hpa -n java-shop'
+            }
+        }
+
+                stage('Approve PROD deployment') {
+            steps {
+                input message: 'Deploy this build to PROD?', ok: 'Deploy to PROD'
+            }
+        }
+
+        stage('Deploy to PROD') {
+            environment {
+                PROD_CLUSTER = 'java-shop-prod-gke'
+                PROD_REPOSITORY = 'java-shop-prod'
+                PROD_IMAGE_TAG = "prod-${env.BUILD_NUMBER}"
+                PROD_IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${PROD_REPOSITORY}/${IMAGE_NAME}:${PROD_IMAGE_TAG}"
+            }
+            steps {
+                sh 'docker tag $IMAGE_URI $PROD_IMAGE_URI'
+                sh 'docker push $PROD_IMAGE_URI'
+
+                sh '''
+                    gcloud container clusters get-credentials $PROD_CLUSTER  --region $REGION --project $PROJECT_ID
+                    kubectl set image deployment/java-shop-app java-shop-app=$PROD_IMAGE_URI -n java-shop
+                    kubectl rollout status deployment/java-shop-app -n java-shop
+                '''
+            }
+        }
+
+        stage('Show PROD resources') {
             steps {
                 sh 'kubectl get pods -n java-shop'
                 sh 'kubectl get svc -n java-shop'
