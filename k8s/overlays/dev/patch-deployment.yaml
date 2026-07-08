@@ -11,7 +11,7 @@ spec:
         - name: java-shop-app
           resources:
             requests:
-              cpu: "251m"
+              cpu: "250m"
               memory: "512Mi"
             limits:
               cpu: "500m"
