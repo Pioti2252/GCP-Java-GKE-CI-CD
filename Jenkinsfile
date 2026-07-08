@@ -11,6 +11,9 @@ pipeline {
         IMAGE_NAME = 'java-shop'
         IMAGE_TAG = "dev-${env.BUILD_NUMBER}"
         IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${DEV_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+        DEV_APP_URL = 'http://8.232.215.207/'
+        PROD_APP_URL = 'http://34.36.34.100/'
     }
 
     stages {
@@ -59,6 +62,21 @@ pipeline {
             }
         }
 
+        stage('Smoke test DEV') {
+            steps {
+                sh '''
+                    echo "Waiting before DEV smoke tests..."
+                    sleep 20
+
+                    echo "Checking DEV health endpoint..."
+                    curl -f $DEV_APP_URL/actuator/health
+
+                    echo "Checking DEV products endpoint..."
+                    curl -f $DEV_APP_URL/api/products
+                '''
+            }
+        }
+
         stage('Show DEV resources') {
             steps {
                 sh 'kubectl get pods -n java-shop'
@@ -93,6 +111,21 @@ pipeline {
             }
         }
 
+        stage('Smoke test PROD') {
+            steps {
+                sh '''
+                    echo "Waiting before PROD smoke tests..."
+                    sleep 20
+
+                    echo "Checking PROD health endpoint..."
+                    curl -f $PROD_APP_URL/actuator/health
+
+                    echo "Checking PROD products endpoint..."
+                    curl -f $PROD_APP_URL/api/products
+                '''
+            }
+        }
+
         stage('Show PROD resources') {
             steps {
                 sh 'kubectl get pods -n java-shop'
@@ -100,6 +133,29 @@ pipeline {
                 sh 'kubectl get ingress -n java-shop'
                 sh 'kubectl get hpa -n java-shop'
             }
+        }
+    }
+    post {
+        failure {
+            sh '''
+                echo "Pipeline failed. Showing basic Kubernetes diagnostics..."
+
+                echo "Current context:"
+                kubectl config current-context || true
+
+                echo "Pods:"
+                kubectl get pods -n java-shop || true
+
+                echo "Deployment:"
+                kubectl describe deployment java-shop-app -n java-shop || true
+
+                echo "Recent events:"
+                kubectl get events -n java-shop --sort-by=.metadata.creationTimestamp | tail -30 || true
+            '''
+        }
+
+        success {
+            echo "Pipeline finished successfully. Application deployed and smoke tests passed."
         }
     }
 }
