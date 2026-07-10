@@ -56,6 +56,7 @@ pipeline {
             steps {
                 sh '''
                     gcloud container clusters get-credentials $DEV_CLUSTER --region $REGION --project $PROJECT_ID
+                    kubectl apply -k k8s/overlays/dev
                     kubectl set image deployment/java-shop-app java-shop-app=$IMAGE_URI -n java-shop
                     kubectl rollout status deployment/java-shop-app -n java-shop
                 '''
@@ -134,6 +135,7 @@ pipeline {
 
                 sh '''
                     gcloud container clusters get-credentials $PROD_CLUSTER  --region $REGION --project $PROJECT_ID
+                    kubectl apply -k k8s/overlays/prod
                     kubectl set image deployment/java-shop-app java-shop-app=$PROD_IMAGE_URI -n java-shop
                     kubectl rollout status deployment/java-shop-app -n java-shop
                 '''
