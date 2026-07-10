@@ -126,7 +126,7 @@ pipeline {
             }
         }
 
-        stage('Show PROD resourcess') {
+        stage('Show PROD resourcesss') {
             steps {
                 sh 'kubectl get pods -n java-shop'
                 sh 'kubectl get svc -n java-shop'
