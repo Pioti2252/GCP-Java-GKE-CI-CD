@@ -10,3 +10,4 @@ resources:
   - hpa.yaml
   - ingress.yaml
   - pod-monitoring.yaml
+  - service-account.yaml
