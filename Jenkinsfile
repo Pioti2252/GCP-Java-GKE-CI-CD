@@ -12,8 +12,8 @@ pipeline {
         IMAGE_TAG = "dev-${env.BUILD_NUMBER}"
         IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${DEV_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-        DEV_APP_URL = 'http://8.232.215.207/'
-        PROD_APP_URL = 'http://34.36.34.100/'
+        DEV_APP_URL = 'http:/8.232.215.207'
+        PROD_APP_URL = 'http:/34.36.34.100'
     }
 
     stages {
@@ -65,14 +65,43 @@ pipeline {
         stage('Smoke test DEV') {
             steps {
                 sh '''
-                    echo "Waiting before DEV smoke tests..."
-                    sleep 20
+                    echo "Running DEV smoke tests..."
 
-                    echo "Checking DEV health endpoint..."
-                    curl -f $DEV_APP_URL/actuator/health
+                    for i in {1..18}; do
+                        echo "DEV health check attempt $i/18"
+
+                        if curl -fsS "$DEV_APP_URL/actuator/health"; then
+                            echo "DEV health endpoint is OK"
+                            break
+                        fi
+
+                        echo "DEV health endpoint is not ready yet. Waiting 10 seconds..."
+                        sleep 10
+
+                        if [ "$i" -eq 18 ]; then
+                            echo "DEV health check failed after all retries"
+                            exit 1
+                        fi
+                    done
 
                     echo "Checking DEV products endpoint..."
-                    curl -f $DEV_APP_URL/api/products
+
+                    for i in {1..12}; do
+                        echo "DEV products check attempt $i/12"
+
+                        if curl -fsS "$DEV_APP_URL/api/products"; then
+                            echo "DEV products endpoint is OK"
+                            break
+                        fi
+
+                        echo "DEV products endpoint is not ready yet. Waiting 10 seconds..."
+                        sleep 10
+
+                        if [ "$i" -eq 12 ]; then
+                            echo "DEV products check failed after all retries"
+                            exit 1
+                        fi
+                    done
                 '''
             }
         }
@@ -114,14 +143,43 @@ pipeline {
         stage('Smoke test PROD') {
             steps {
                 sh '''
-                    echo "Waiting before PROD smoke tests..."
-                    sleep 20
+                    echo "Running PROD smoke tests..."
 
-                    echo "Checking PROD health endpoint..."
-                    curl -f $PROD_APP_URL/actuator/health
+                    for i in {1..18}; do
+                        echo "PROD health check attempt $i/18"
+
+                        if curl -fsS "$PROD_APP_URL/actuator/health"; then
+                            echo "PROD health endpoint is OK"
+                            break
+                        fi
+
+                        echo "PROD health endpoint is not ready yet. Waiting 10 seconds..."
+                        sleep 10
+
+                        if [ "$i" -eq 18 ]; then
+                            echo "PROD health check failed after all retries"
+                            exit 1
+                        fi
+                    done
 
                     echo "Checking PROD products endpoint..."
-                    curl -f $PROD_APP_URL/api/products
+
+                    for i in {1..12}; do
+                        echo "PROD products check attempt $i/12"
+
+                        if curl -fsS "$PROD_APP_URL/api/products"; then
+                            echo "PROD products endpoint is OK"
+                            break
+                        fi
+
+                        echo "PROD products endpoint is not ready yet. Waiting 10 seconds..."
+                        sleep 10
+
+                        if [ "$i" -eq 12 ]; then
+                            echo "PROD products check failed after all retries"
+                            exit 1
+                        fi
+                    done
                 '''
             }
         }
