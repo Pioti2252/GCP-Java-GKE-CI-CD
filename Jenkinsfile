@@ -143,7 +143,7 @@ pipeline {
         stage('Smoke test PROD') {
             steps {
                 sh '''
-                    echo "Running PROD smoke tests..."
+                    echo "Running PROD smoke tests...."
 
                     for i in {1..18}; do
                         echo "PROD health check attempt $i/18"
