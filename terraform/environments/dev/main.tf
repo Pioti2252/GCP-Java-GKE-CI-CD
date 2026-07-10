@@ -16,22 +16,6 @@ module "gke" {
   deletion_protection = false
 }
 
-module "cloud_sql" {
-  source = "../../modules/cloud-sql"
-
-  instance_name       = "java-shop-dev-db"
-  region              = var.region
-  environment         = var.environment
-  tier                = "db-f1-micro"
-  disk_size           = 10
-  backup_enabled      = false
-  deletion_protection = false
-
-  database_name     = "java_shop"
-  database_user     = "java_shop_user"
-  database_password = var.database_password
-}
-
 module "iam" {
   source = "../../modules/iam"
 
@@ -55,4 +39,34 @@ module "jenkins_vm" {
 
   allowed_ssh_cidr     = "0.0.0.0/0"
   allowed_jenkins_cidr = "0.0.0.0/0"
+}
+
+module "private_service_access" {
+  source = "../../modules/private-service-access"
+
+  project_id   = var.project_id
+  network_name = "default"
+  address_name = "java-shop-dev-private-service-range"
+}
+
+module "cloud_sql" {
+  source = "../../modules/cloud-sql"
+
+  instance_name       = "java-shop-dev-db"
+  region              = var.region
+  environment         = var.environment
+  tier                = "db-f1-micro"
+  disk_size           = 10
+  backup_enabled      = false
+  deletion_protection = false
+
+  database_name     = "java_shop"
+  database_user     = "java_shop_user"
+  database_password = var.database_password
+
+  private_network = "projects/${var.project_id}/global/networks/default"
+
+    depends_on = [
+    module.private_service_access
+  ]
 }

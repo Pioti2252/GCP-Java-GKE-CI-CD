@@ -83,4 +83,13 @@ resource "google_compute_instance" "jenkins" {
     environment = var.environment
     managed_by  = "terraform"
   }
+  lifecycle {
+    prevent_destroy = true
+
+    ignore_changes = [
+      metadata,
+      metadata_startup_script,
+      tags,
+    ]
+  }
 }

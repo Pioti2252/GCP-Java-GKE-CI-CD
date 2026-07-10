@@ -20,6 +20,7 @@ spec:
         - name: cloud-sql-proxy
           args:
             - "--structured-logs"
+            - "--private-ip"
             - "--port=5432"
             - "gcp-java-gke-ci-cd:europe-central2:java-shop-dev-db"
           resources:
