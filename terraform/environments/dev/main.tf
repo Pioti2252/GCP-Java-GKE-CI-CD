@@ -37,8 +37,8 @@ module "jenkins_vm" {
   machine_type = "e2-medium"
   disk_size_gb = 30
 
-  allowed_ssh_cidr     = "0.0.0.0/0"
-  allowed_jenkins_cidr = "0.0.0.0/0"
+  allowed_ssh_cidr     = var.allowed_ssh_cidr
+  allowed_jenkins_cidr = var.allowed_jenkins_cidr
 }
 
 module "private_service_access" {

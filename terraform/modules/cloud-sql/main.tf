@@ -17,13 +17,8 @@ resource "google_sql_database_instance" "this" {
     }
 
     ip_configuration {
-      ipv4_enabled = true
+      ipv4_enabled    = false
       private_network = var.private_network
-
-      authorized_networks {
-        name  = "temporary-open-for-dev"
-        value = "0.0.0.0/0"
-      }
     }
 
     user_labels = {
@@ -31,7 +26,6 @@ resource "google_sql_database_instance" "this" {
       environment = var.environment
       managed_by  = "terraform"
     }
-
   }
 }
 

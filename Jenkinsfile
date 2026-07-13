@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+    label 'jenkins-gcp'
+    }
 
     environment {
         PROJECT_ID = 'gcp-java-gke-ci-cd'
@@ -12,8 +14,6 @@ pipeline {
         IMAGE_TAG = "dev-${env.BUILD_NUMBER}"
         IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${DEV_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-        DEV_APP_URL = 'http:/8.232.215.207'
-        PROD_APP_URL = 'http:/34.36.34.100'
     }
 
     stages {
@@ -31,12 +31,41 @@ pipeline {
                 }
             }
         }
+        stage('IaC security scan') {
+            steps {
+                sh '''
+                    echo "Scanning Terraform and Kubernetes manifests with Checkov..."
+
+                    docker run --rm \
+                    -v "$PWD:/src" \
+                    bridgecrew/checkov:latest \
+                    -d /src \
+                    --quiet \
+                    --soft-fail
+                '''
+            }
+        }
 
         stage('Build Docker image') {
             steps {
                 dir('java-shop') {
                     sh 'docker build -t $IMAGE_URI .'
                 }
+            }
+        }
+        stage('Scan Docker image') {
+            steps {
+                sh '''
+                    echo "Scanning Docker image with Trivy..."
+
+                    docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    aquasec/trivy:latest image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 0 \
+                    --no-progress \
+                    $IMAGE_URI
+                '''
             }
         }
 
@@ -54,12 +83,33 @@ pipeline {
 
         stage('Deploy to DEV') {
             steps {
-                sh '''
-                    gcloud container clusters get-credentials $DEV_CLUSTER --region $REGION --project $PROJECT_ID
-                    kubectl apply -k k8s/overlays/dev
-                    kubectl set image deployment/java-shop-app java-shop-app=$IMAGE_URI -n java-shop
-                    kubectl rollout status deployment/java-shop-app -n java-shop
-                '''
+                script {
+                    try {
+                        sh '''
+                            gcloud container clusters get-credentials $DEV_CLUSTER \
+                            --region $REGION \
+                            --project $PROJECT_ID
+
+                            kubectl apply -k k8s/overlays/dev
+
+                            kubectl set image deployment/java-shop-app \
+                            java-shop-app=$IMAGE_URI \
+                            -n java-shop
+
+                            kubectl rollout status deployment/java-shop-app -n java-shop
+                        '''
+                    } catch (err) {
+                        sh '''
+                            echo "DEV deployment failed. Rolling back..."
+
+                            kubectl rollout undo deployment/java-shop-app -n java-shop || true
+                            kubectl rollout status deployment/java-shop-app -n java-shop || true
+
+                            echo "DEV rollback attempted."
+                        '''
+                        throw err
+                    }
+                }
             }
         }
 
@@ -67,6 +117,18 @@ pipeline {
             steps {
                 sh '''
                     echo "Running DEV smoke tests..."
+
+                    DEV_INGRESS_IP=$(kubectl get ingress java-shop-ingress -n java-shop -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+                    if [ -z "$DEV_INGRESS_IP" ]; then
+                    echo "DEV Ingress IP is empty"
+                    kubectl get ingress -n java-shop
+                    exit 1
+                    fi
+
+                    DEV_APP_URL="http://${DEV_INGRESS_IP}"
+
+                    echo "DEV app URL: $DEV_APP_URL"
 
                     for i in {1..18}; do
                         echo "DEV health check attempt $i/18"
@@ -123,29 +185,56 @@ pipeline {
         }
 
         stage('Deploy to PROD') {
-            environment {
-                PROD_CLUSTER = 'java-shop-prod-gke'
-                PROD_REPOSITORY = 'java-shop-prod'
-                PROD_IMAGE_TAG = "prod-${env.BUILD_NUMBER}"
-                PROD_IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${PROD_REPOSITORY}/${IMAGE_NAME}:${PROD_IMAGE_TAG}"
-            }
             steps {
-                sh 'docker tag $IMAGE_URI $PROD_IMAGE_URI'
-                sh 'docker push $PROD_IMAGE_URI'
+                script {
+                    try {
+                        sh 'docker tag $IMAGE_URI $PROD_IMAGE_URI'
+                        sh 'docker push $PROD_IMAGE_URI'
 
-                sh '''
-                    gcloud container clusters get-credentials $PROD_CLUSTER  --region $REGION --project $PROJECT_ID
-                    kubectl apply -k k8s/overlays/prod
-                    kubectl set image deployment/java-shop-app java-shop-app=$PROD_IMAGE_URI -n java-shop
-                    kubectl rollout status deployment/java-shop-app -n java-shop
-                '''
+                        sh '''
+                            gcloud container clusters get-credentials $PROD_CLUSTER \
+                            --region $REGION \
+                            --project $PROJECT_ID
+
+                            kubectl apply -k k8s/overlays/prod
+
+                            kubectl set image deployment/java-shop-app \
+                            java-shop-app=$PROD_IMAGE_URI \
+                            -n java-shop
+
+                            kubectl rollout status deployment/java-shop-app -n java-shop
+                        '''
+                    } catch (err) {
+                        sh '''
+                            echo "PROD deployment failed. Rolling back..."
+
+                            kubectl rollout undo deployment/java-shop-app -n java-shop || true
+                            kubectl rollout status deployment/java-shop-app -n java-shop || true
+
+                            echo "PROD rollback attempted."
+                        '''
+                        throw err
+                    }
+                }
             }
         }
 
         stage('Smoke test PROD') {
             steps {
                 sh '''
-                    echo "Running PROD smoke tests...."
+                    echo "Running PROD smoke tests..."
+
+                    PROD_INGRESS_IP=$(kubectl get ingress java-shop-ingress -n java-shop -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+                    if [ -z "$PROD_INGRESS_IP" ]; then
+                    echo "PROD Ingress IP is empty"
+                    kubectl get ingress -n java-shop
+                    exit 1
+                    fi
+
+                    PROD_APP_URL="http://${PROD_INGRESS_IP}"
+
+                    echo "PROD app URL: $PROD_APP_URL"
 
                     for i in {1..18}; do
                         echo "PROD health check attempt $i/18"

@@ -8,12 +8,6 @@ resource "google_project_iam_member" "gke_artifact_registry_reader" {
   member  = "serviceAccount:${local.gke_node_service_account_email}"
 }
 
-resource "google_service_account" "jenkins_deployer" {
-  account_id   = var.jenkins_service_account_id
-  display_name = var.jenkins_service_account_display_name
-  description  = "Service account used by Jenkins to build, push and deploy Java Shop application"
-}
-
 resource "google_project_iam_member" "jenkins_artifact_registry_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
