@@ -10,10 +10,16 @@ pipeline {
         DEV_CLUSTER = 'java-shop-dev-gke'
         DEV_REPOSITORY = 'java-shop-dev'
 
+        PROD_CLUSTER = 'java-shop-prod-gke'
+        PROD_REPOSITORY = 'java-shop-prod'
+
         IMAGE_NAME = 'java-shop'
+
         IMAGE_TAG = "dev-${env.BUILD_NUMBER}"
         IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${DEV_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
+        PROD_IMAGE_TAG = "prod-${env.BUILD_NUMBER}"
+        PROD_IMAGE_URI = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${PROD_REPOSITORY}/${IMAGE_NAME}:${PROD_IMAGE_TAG}"
     }
 
     stages {

@@ -72,7 +72,6 @@ resource "google_compute_instance" "jenkins" {
   service_account {
     email = google_service_account.jenkins_vm.email
     scopes = [
-      "https://www.googleapis.com/auth/devstorage.read_write",
       "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
