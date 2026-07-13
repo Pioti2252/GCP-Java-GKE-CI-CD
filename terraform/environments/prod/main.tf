@@ -22,7 +22,7 @@ module "cloud_sql" {
   instance_name       = "java-shop-prod-db"
   region              = var.region
   environment         = var.environment
-  tier                = "db-f1-micro"
+  tier                = var.tier
   disk_size           = 10
   backup_enabled      = true
   deletion_protection = true
